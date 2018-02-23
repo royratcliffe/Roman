@@ -6,5 +6,15 @@
         <local:MainViewModel />
     </Window.DataContext>
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        <ItemsControl ItemsSource="{Binding Lines}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Line X1="{Binding Start.X}" Y1="{Binding Start.Y}" X2="{Binding End.X}" Y2="{Binding End.Y}" Stroke="Black" />
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
     </Grid>
 </Window>
