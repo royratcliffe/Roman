@@ -10,13 +10,13 @@ open System.Windows
 type Point = { X: float; Y: float }
 type Line = { Start: Point; End: Point }
 
-type MouseCapture = Captured | Released
+module Mouse =
 
-type MouseEvent =
-| MouseCaptureEvent of capture: MouseCapture
-| MouseMoveEvent of capture: MouseCapture * point: Point
+    type Capture = Captured | Released
 
-module internal Mouse =
+    type Event =
+    | CaptureEvent of capture: Capture
+    | MoveEvent of capture: Capture * point: Point
 
     let buttonCapture (args: MouseButtonEventArgs) =
         match args.ButtonState with
@@ -24,29 +24,29 @@ module internal Mouse =
             let source = args.OriginalSource :?> UIElement
             source.CaptureMouse ()
             |> ignore
-            MouseCaptureEvent(Captured)
+            CaptureEvent(Captured)
         | _ ->
             let source = args.OriginalSource :?> UIElement
             source.ReleaseMouseCapture ()
-            MouseCaptureEvent(Released)
+            CaptureEvent(Released)
 
     let move (args: MouseEventArgs) =
         let source = args.OriginalSource :?> IInputElement
         let captured =
             if System.Object.ReferenceEquals (Mouse.Captured, source)
-            then MouseCapture.Captured
-            else MouseCapture.Released
+            then Capture.Captured
+            else Capture.Released
         let point = args.GetPosition (source)
-        MouseMoveEvent(captured, { X = point.X; Y = point.Y })
+        MoveEvent(captured, { X = point.X; Y = point.Y })
 
 type MouseButtonCaptureConverter () =
-    inherit EventArgsConverter<MouseButtonEventArgs, MouseEvent> (Mouse.buttonCapture, MouseCaptureEvent(Released))
+    inherit EventArgsConverter<MouseButtonEventArgs, Mouse.Event> (Mouse.buttonCapture, Mouse.CaptureEvent(Mouse.Released))
 
 type MouseMoveConverter () =
-    inherit EventArgsConverter<MouseEventArgs, MouseEvent> (Mouse.move, MouseCaptureEvent(Released))
+    inherit EventArgsConverter<MouseEventArgs, Mouse.Event> (Mouse.move, Mouse.CaptureEvent(Mouse.Released))
 
 type MainViewModel () as me =
-    inherit EventViewModelBase<MouseEvent> ()
+    inherit EventViewModelBase<Mouse.Event> ()
 
     let lines = ObservableCollection<Line> ()
 
@@ -54,7 +54,7 @@ type MainViewModel () as me =
 
     let handleMouseEvent =
         function
-        | MouseMoveEvent(MouseCapture.Captured, startPoint), MouseMoveEvent(_, endPoint) ->
+        | Mouse.MoveEvent(Mouse.Capture.Captured, startPoint), Mouse.MoveEvent(_, endPoint) ->
             { Start = startPoint; End = endPoint }
             |> lines.Add
         | _, _ ->
