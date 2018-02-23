@@ -1,5 +1,8 @@
 ﻿open System
+open FsXaml
 
-type App = FsXaml.XAML<"App.xaml">
+type App = XAML<"App.xaml">
 
-let [<EntryPoint; STAThread>] main _argv = (App ()).Run ()
+let [<EntryPoint; STAThread>] main _argv =
+    Wpf.installBlendSupport ()
+    (App ()).Run ()
