@@ -15,8 +15,8 @@ module Mouse =
     type Capture = Captured | Released
 
     type Event =
-    | CaptureEvent of capture: Capture
-    | MoveEvent of capture: Capture * point: Point
+    | Capture of Capture
+    | Move of capture: Capture * position: Point
 
     let buttonCapture (args: MouseButtonEventArgs) =
         match args.ButtonState with
@@ -24,26 +24,26 @@ module Mouse =
             let source = args.OriginalSource :?> UIElement
             source.CaptureMouse ()
             |> ignore
-            CaptureEvent(Captured)
+            Capture(Captured)
         | _ ->
             let source = args.OriginalSource :?> UIElement
             source.ReleaseMouseCapture ()
-            CaptureEvent(Released)
+            Capture(Released)
 
     let move (args: MouseEventArgs) =
         let source = args.OriginalSource :?> IInputElement
-        let captured =
+        let capture =
             if System.Object.ReferenceEquals (Mouse.Captured, source)
-            then Capture.Captured
-            else Capture.Released
-        let point = args.GetPosition (source)
-        MoveEvent(captured, { X = point.X; Y = point.Y })
+            then Captured
+            else Released
+        let position = args.GetPosition (source)
+        Move(capture, { X = position.X; Y = position.Y })
 
 type MouseButtonCaptureConverter () =
-    inherit EventArgsConverter<MouseButtonEventArgs, Mouse.Event> (Mouse.buttonCapture, Mouse.CaptureEvent(Mouse.Released))
+    inherit EventArgsConverter<MouseButtonEventArgs, Mouse.Event> (Mouse.buttonCapture, Mouse.Capture(Mouse.Released))
 
 type MouseMoveConverter () =
-    inherit EventArgsConverter<MouseEventArgs, Mouse.Event> (Mouse.move, Mouse.CaptureEvent(Mouse.Released))
+    inherit EventArgsConverter<MouseEventArgs, Mouse.Event> (Mouse.move, Mouse.Capture(Mouse.Released))
 
 type MainViewModel () as me =
     inherit EventViewModelBase<Mouse.Event> ()
@@ -54,7 +54,7 @@ type MainViewModel () as me =
 
     let handleMouseEvent =
         function
-        | Mouse.MoveEvent(Mouse.Capture.Captured, startPoint), Mouse.MoveEvent(_, endPoint) ->
+        | Mouse.Move(Mouse.Captured, startPoint), Mouse.Move(_, endPoint) ->
             { Start = startPoint; End = endPoint }
             |> lines.Add
         | _, _ ->
